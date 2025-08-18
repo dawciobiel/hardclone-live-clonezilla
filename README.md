@@ -7,13 +7,13 @@ Custom Clonezilla Live distribution with HardClone CLI and GUI applications for 
 - Based on Clonezilla Live
 - Supports both BIOS and UEFI boot
 - Includes Python 3.6+ and essential tools (dd, pv)
-- Pre-installed HardClone CLI and GUI applications
+- Pre-installed HardClone CLI ~~and GUI applications~~
 - Automated ISO building via GitHub Actions
 
 ## Applications Included
 
 - **HardClone CLI**: Command-line backup and cloning tool
-- **HardClone GUI**: Graphical interface for backup operations
+- **~~HardClone GUI~~**: ~~Graphical interface for backup operations~~
 - All standard Clonezilla tools and utilities
 
 ## Building
@@ -45,7 +45,7 @@ Built ISOs are available in the GitHub Actions artifacts or releases section.
 3. Boot from the media
 4. Use standard Clonezilla interface or launch HardClone tools:
    - CLI: Available in PATH as `hardclone`
-   - GUI: Desktop shortcut or run `hardclone-gui`
+   - ~~GUI~~: ~~Desktop shortcut or run `hardclone-gui`~~
 
 ## Application Sources
 
