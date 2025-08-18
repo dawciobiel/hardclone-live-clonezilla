@@ -1,0 +1,49 @@
+# Cache, Docker, Output folders
+
+# Logs
+logs/
+*.log
+
+# Ignore everything in artifacts/
+#artifacts/*
+artifacts/
+
+# Allow hardclone folder
+# !artifacts/hardclone/
+
+# Allow only specific file types in hardclone
+# !artifacts/hardclone/*.iso
+# !artifacts/hardclone/*.md5
+# !artifacts/hardclone/*.sha512
+
+
+# tools
+scripts/content_of_files.sh
+scripts/content_of_files.log
+
+# ISO files
+*.iso
+
+# Build artifacts
+clonezilla-custom/
+build/
+temp/
+
+# Docker
+.docker/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
