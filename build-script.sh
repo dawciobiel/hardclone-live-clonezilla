@@ -8,11 +8,11 @@ CLONEZILLA_VERSION=$(curl -s "https://sourceforge.net/projects/clonezilla/files/
 echo "Latest version: $CLONEZILLA_VERSION"
 CLONEZILLA_URL="https://sourceforge.net/projects/clonezilla/files/clonezilla_live_stable/${CLONEZILLA_VERSION}/clonezilla-live-${CLONEZILLA_VERSION}-amd64.iso/download"
 WORK_DIR="/workspace"
-ISO_NAME="hardclone-live-$(date +%Y%m%d).iso"
+ISO_NAME="hardclone-live-clonezilla-$(date +%Y%m%d).iso"
 
 # CLI and GUI repository URLs
 HARDCLONE_CLI_REPO="https://github.com/dawciobiel/hardclone-cli.git"
-HARDCLONE_GUI_REPO="https://github.com/dawciobiel/hardclone-gui.git"
+# HARDCLONE_GUI_REPO="https://github.com/dawciobiel/hardclone-gui.git"
 
 echo "Building HardClone Live ISO..."
 
@@ -46,11 +46,11 @@ cd squashfs-root
 git clone "$HARDCLONE_CLI_REPO" opt/hardclone-cli
 
 # Clone GUI application  
-git clone "$HARDCLONE_GUI_REPO" opt/hardclone-gui
+# git clone "$HARDCLONE_GUI_REPO" opt/hardclone-gui
 
 # Make applications executable
 chmod +x opt/hardclone-cli/* 2>/dev/null || true
-chmod +x opt/hardclone-gui/* 2>/dev/null || true
+# chmod +x opt/hardclone-gui/* 2>/dev/null || true
 
 # Install additional packages
 echo "Preparing additional packages..."
@@ -101,6 +101,7 @@ cat > usr/local/bin/network-setup.sh << 'NETEOF'
 sleep 5
 dhclient eth0 2>/dev/null || dhclient 2>/dev/null &
 sleep 10
+echo "Package list update...."
 apt update &
 NETEOF
 chmod +x usr/local/bin/network-setup.sh
@@ -124,17 +125,17 @@ Terminal=true
 Categories=System;
 EOF
 
-cat > home/user/Desktop/HardClone-GUI.desktop << 'EOF'
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=HardClone GUI
-Comment=Graphical backup tool
-Exec=/opt/hardclone-gui/hardclone-gui
-Icon=drive-harddisk
-Terminal=false
-Categories=System;
-EOF
+# cat > home/user/Desktop/HardClone-GUI.desktop << 'EOF'
+# [Desktop Entry]
+# Version=1.0
+# Type=Application
+# Name=HardClone GUI
+# Comment=Graphical backup tool
+# Exec=/opt/hardclone-gui/hardclone-gui
+# Icon=drive-harddisk
+# Terminal=false
+# Categories=System;
+# EOF
 
 chmod +x home/user/Desktop/*.desktop
 echo "DEBUG: Desktop shortcuts created"
