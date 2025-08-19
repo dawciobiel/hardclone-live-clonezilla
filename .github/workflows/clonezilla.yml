@@ -4,44 +4,30 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:  # Allow launch manually
+  workflow_dispatch:  # Allow manual run
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Cache apt packages
-      - name: Cache apt packages
-        uses: actions/cache@v3
-        with:
-          path: /var/cache/apt
-          key: ${{ runner.os }}-apt-${{ hashFiles('**/package-list.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-apt-
-
-      # 3. Cache downloaded rootfs or other heavy files
-      - name: Cache ISO rootfs
-        uses: actions/cache@v3
-        with:
-          path: rootfs_cache
-          key: ${{ runner.os }}-rootfs-${{ hashFiles('**/rootfs-dependencies.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-rootfs-
-
-      # 4. Install dependencies (apt)
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y debootstrap xorriso isolinux libarchive-tools wget p7zip-full squashfs-tools xorriso git proot
+          sudo apt-get install -y \
+            debootstrap xorriso isolinux libarchive-tools wget \
+            p7zip-full squashfs-tools git proot curl
 
-      # 5. Build ISO
       - name: Run build script to build ISO
         run: |
           chmod +x build-script.sh
           ./build-script.sh
 
+      - name: Upload custom ISO
+        uses: actions/upload-artifact@v3
+        with:
+          name: hardclone-live-iso
+          path: ./*.iso
