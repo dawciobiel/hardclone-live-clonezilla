@@ -43,20 +43,20 @@ jobs:
 
       # 5. Run download ISO
       - name: Download base Clonezilla ISO
-        run: bash scripts/download-base-iso.sh
+        run: bash build-scripts/download-base-iso.sh
 
       # 6. Extract base ISO
       - name: Extract base ISO
-        run: bash scripts/extract-base-iso.sh
+        run: bash build-scripts/extract-base-iso.sh
 
       # 7. Customize ISO filesystem
       - name: Customize ISO
         working-directory: /workspace/clonezilla-custom/iso-extract/live
-        run: bash ../../../scripts/customize-iso.sh
+        run: bash ../../../build-scripts/customize-iso.sh
 
       # 8. Repack ISO
       - name: Repack ISO
-        run: bash scripts/repack-iso.sh
+        run: bash build-scripts/repack-iso.sh
 
       # 9. Upload artifact
       - name: Upload ISO
