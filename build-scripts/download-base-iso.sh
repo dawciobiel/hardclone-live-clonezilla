@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-WORK_DIR="/workspace"
+WORK_DIR="${GITHUB_WORKSPACE:-$(pwd)}"
 mkdir -p "$WORK_DIR/clonezilla-custom"
 cd "$WORK_DIR/clonezilla-custom"
 
