@@ -2,40 +2,56 @@ name: Build Custom Clonezilla Live
 
 on:
   push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:
+    branches:
+      - main
+  workflow_dispatch:  # Allow launch manually
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    
-    - name: Build Docker image
-      run: docker build -t clonezilla-builder .
-    
-    - name: Build custom ISO
-      run: |
-        docker run --rm \
-          -v ${{ github.workspace }}:/workspace \
-          -e GITHUB_WORKSPACE=/workspace \
-          clonezilla-builder
-    
-    - name: Upload ISO artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: hardclone-live-iso
-        path: "*.iso"
-        retention-days: 30
-    
-    - name: Release (if tagged)
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v1
-      with:
-        files: "*.iso"
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # 1. Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Cache apt packages
+      - name: Cache apt packages
+        uses: actions/cache@v3
+        with:
+          path: /var/cache/apt
+          key: ${{ runner.os }}-apt-${{ hashFiles('**/package-list.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
+
+      # 3. Cache downloaded rootfs or other heavy files
+      - name: Cache ISO rootfs
+        uses: actions/cache@v3
+        with:
+          path: rootfs_cache
+          key: ${{ runner.os }}-rootfs-${{ hashFiles('**/rootfs-dependencies.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-rootfs-
+
+      # 4. Install dependencies (apt)
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y debootstrap xorriso isolinux
+
+      # 5. Prepare root filesystem (can be cached)
+      - name: Prepare root filesystem
+        run: |
+          mkdir -p rootfs_cache
+          if [ ! -f rootfs_cache/prepared.txt ]; then
+            ./prepare-rootfs.sh  # Script to create rootfs
+            touch rootfs_cache/prepared.txt
+          else
+            echo "Using cached root filesystem"
+          fi
+
+      # 6. Build ISO
+      - name: Build ISO
+        run: |
+          ./build-iso.sh
+
