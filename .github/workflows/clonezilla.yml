@@ -25,9 +25,10 @@ jobs:
         run: |
           chmod +x build-script.sh
           ./build-script.sh
-
-      - name: Upload custom ISO
-        uses: actions/upload-artifact@v3
+          
+      - name: Upload ISO artifact
+        uses: actions/upload-artifact@v4
         with:
           name: hardclone-live-iso
-          path: ./*.iso
+          path: "*.iso"
+
