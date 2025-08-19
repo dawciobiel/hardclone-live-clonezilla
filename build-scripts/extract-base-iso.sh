@@ -13,6 +13,6 @@ echo "Extracting ISO with 7z..."
 
 cd "$EXTRACT_DIR/live"
 echo "Extracting squashfs filesystem..."
-unsquashfs filesystem.squashfs
+unsquashfs -no-xattrs -d squashfs-root filesystem.squashfs
 
 echo "Extraction completed: squashfs-root ready"
