@@ -2,6 +2,9 @@
 set -e
 
 WORK_DIR="${WORK_DIR:-$PWD}/clonezilla-custom"
+ISO_NAME="hardclone-live-clonezilla-$(date +%Y%m%d).iso"
+OUT_ISO="$WORK_DIR/$ISO_NAME"
+
 cd "$WORK_DIR/iso-extract/live"
 
 echo "Repackaging filesystem..."
@@ -11,8 +14,6 @@ rm -rf squashfs-root
 
 cd ..
 
-ISO_NAME="hardclone-live-clonezilla-$(date +%Y%m%d).iso"
-
 echo "Updating boot configs..."
 sed -i 's/Clonezilla live/HardClone Live/g' isolinux/isolinux.cfg 2>/dev/null || true
 sed -i 's/Clonezilla/HardClone/g' boot/grub/grub.cfg 2>/dev/null || true
@@ -20,6 +21,7 @@ sed -i 's/Clonezilla/HardClone/g' boot/grub/grub.cfg 2>/dev/null || true
 ISOLINUX_BIN=$(find . -name "isolinux.bin" -type f | head -1)
 EFI_IMG=$(find . -name "efi.img" -o -name "*.efi" | head -1)
 
+echo "Building ISO..."
 if [ -n "$ISOLINUX_BIN" ] && [ -n "$EFI_IMG" ]; then
     ISOLINUX_DIR=$(dirname "${ISOLINUX_BIN#./}")
     xorriso -as mkisofs \
@@ -34,26 +36,14 @@ if [ -n "$ISOLINUX_BIN" ] && [ -n "$EFI_IMG" ]; then
         -e "${EFI_IMG#./}" \
         -no-emul-boot \
         -isohybrid-gpt-basdat \
-        -o "../$ISO_NAME" .
+        -o "$OUT_ISO" .
 else
     echo "Boot files not found, creating basic ISO..."
-    xorriso -as mkisofs -r -V "HARDCLONE-LIVE" -J -l -o "../$ISO_NAME" .
+    xorriso -as mkisofs \
+        -r -V "HARDCLONE-LIVE" \
+        -J -l \
+        -o "$OUT_ISO" .
 fi
 
-SRC_REL="../hardclone-live-clonezilla-20250819.iso"
-DST_ABS="/home/runner/work/hardclone-live-clonezilla/hardclone-live-clonezilla/clonezilla-custom/hardclone-live-clonezilla-20250819.iso"
-
-# Kanonikalizacja (Linux GH Actions ma readlink -f)
-src_abs="$(readlink -f "$SRC_REL")"
-# jeżeli plik docelowy jeszcze nie istnieje, readlink -f zwróci błąd — użyj ścieżki jak jest
-dst_abs="$(readlink -f "$DST_ABS" 2>/dev/null || echo "$DST_ABS")"
-
-if [ "$src_abs" = "$dst_abs" ]; then
-  echo "Source and destination are the same ($src_abs). Skipping mv."
-else
-  mkdir -p "$(dirname "$dst_abs")"
-  mv -f "$src_abs" "$dst_abs"
-fi
-
-mv "../$ISO_NAME" "$WORK_DIR/"
-echo "ISO created: $WORK_DIR/$ISO_NAME"
+echo "ISO created: $OUT_ISO"
+ls -lh "$OUT_ISO"
