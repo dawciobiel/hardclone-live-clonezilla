@@ -4,31 +4,63 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:  # Allow manual run
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # 2. Cache apt packages
+      - name: Cache apt packages
+        uses: actions/cache@v3
+        with:
+          path: /var/cache/apt
+          key: ${{ runner.os }}-apt-${{ hashFiles('**/package-list.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
+
+      # 3. Cache ISO / rootfs
+      - name: Cache ISO rootfs
+        uses: actions/cache@v3
+        with:
+          path: /workspace/clonezilla-custom
+          key: ${{ runner.os }}-rootfs-${{ hashFiles('**/rootfs-dependencies.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-rootfs-
+
+      # 4. Install dependencies
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            debootstrap xorriso isolinux libarchive-tools wget \
-            p7zip-full squashfs-tools git proot curl
+            debootstrap xorriso isolinux libarchive-tools \
+            wget p7zip-full squashfs-tools git proot curl
 
-      - name: Run build script to build ISO
-        run: |
-          chmod +x build-script.sh
-          ./build-script.sh
-          
-      - name: Upload ISO artifact
+      # 5. Run download ISO
+      - name: Download base Clonezilla ISO
+        run: bash scripts/download-base-iso.sh
+
+      # 6. Extract base ISO
+      - name: Extract base ISO
+        run: bash scripts/extract-base-iso.sh
+
+      # 7. Customize ISO filesystem
+      - name: Customize ISO
+        working-directory: /workspace/clonezilla-custom/iso-extract/live
+        run: bash ../../../scripts/customize-iso.sh
+
+      # 8. Repack ISO
+      - name: Repack ISO
+        run: bash scripts/repack-iso.sh
+
+      # 9. Upload artifact
+      - name: Upload ISO
         uses: actions/upload-artifact@v4
         with:
           name: hardclone-live-iso
-          path: "*.iso"
-
+          path: /workspace/hardclone-live-clonezilla-*.iso

@@ -1,0 +1,15 @@
+#!/bin/bash
+set -e
+
+WORK_DIR="/workspace"
+mkdir -p "$WORK_DIR"
+
+bash build-scripts/download-base-iso.sh
+bash build-scripts/extract-base-iso.sh
+
+# We enter squashfs-root for customization
+cd "$WORK_DIR/clonezilla-custom/iso-extract/live"
+bash ../../../build-scripts/customize-iso.sh
+cd ..
+
+bash build-scripts/repack-iso.sh
