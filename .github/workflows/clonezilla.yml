@@ -37,17 +37,11 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y debootstrap xorriso isolinux libarchive-tools
+          sudo apt-get install -y debootstrap xorriso isolinux libarchive-tools wget p7zip-full squashfs-tools xorriso git proot
 
-      # 5. Extract Clonezilla ISO
-      - name: Extract Clonezilla ISO
+      # 5. Build ISO
+      - name: Run build script to build ISO
         run: |
-          mkdir iso_root
-          bsdtar -C iso_root -xf clonezilla.iso
-
-
-      # 6. Build ISO
-      - name: Build ISO
-        run: |
-          ./build-iso.sh
+          chmod +x build-script.sh
+          ./build-script.sh
 
