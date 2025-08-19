@@ -40,5 +40,20 @@ else
     xorriso -as mkisofs -r -V "HARDCLONE-LIVE" -J -l -o "../$ISO_NAME" .
 fi
 
+SRC_REL="../hardclone-live-clonezilla-20250819.iso"
+DST_ABS="/home/runner/work/hardclone-live-clonezilla/hardclone-live-clonezilla/clonezilla-custom/hardclone-live-clonezilla-20250819.iso"
+
+# Kanonikalizacja (Linux GH Actions ma readlink -f)
+src_abs="$(readlink -f "$SRC_REL")"
+# jeżeli plik docelowy jeszcze nie istnieje, readlink -f zwróci błąd — użyj ścieżki jak jest
+dst_abs="$(readlink -f "$DST_ABS" 2>/dev/null || echo "$DST_ABS")"
+
+if [ "$src_abs" = "$dst_abs" ]; then
+  echo "Source and destination are the same ($src_abs). Skipping mv."
+else
+  mkdir -p "$(dirname "$dst_abs")"
+  mv -f "$src_abs" "$dst_abs"
+fi
+
 mv "../$ISO_NAME" "$WORK_DIR/"
 echo "ISO created: $WORK_DIR/$ISO_NAME"
