@@ -16,6 +16,7 @@ echo "DEBUG: checking folder [ $(pwd) ] content:"
 ls -l
 
 echo "Extracting squashfs filesystem..."
-proot -0 unsquashfs -d squashfs-root -no-xattrs -no-dev filesystem.squashfs
+# We ignore Xattr and force Exit code 0 despite non-critical errors (e.g. /dev /*)
+unsquashfs -no-xattrs -no-exit-code -d squashfs-root filesystem.squashfs
 
 echo "Extraction completed: squashfs-root ready"
