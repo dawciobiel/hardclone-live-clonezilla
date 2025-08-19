@@ -1,14 +1,17 @@
 #!/bin/bash
 set -e
 
-WORK_DIR="/workspace/clonezilla-custom"
+WORK_DIR="${WORK_DIR:-$PWD}/clonezilla-custom"
 cd "$WORK_DIR"
 
-echo "Extracting Clonezilla ISO..."
-mkdir -p iso-extract
-7z x clonezilla-original.iso -oiso-extract
+ISO_NAME="clonezilla-original.iso"
+EXTRACT_DIR="iso-extract"
 
-cd iso-extract/live
+mkdir -p "$EXTRACT_DIR"
+echo "Extracting ISO with 7z..."
+7z x "$ISO_NAME" -o"$EXTRACT_DIR"
+
+cd "$EXTRACT_DIR/live"
 echo "Extracting squashfs filesystem..."
 unsquashfs filesystem.squashfs
 

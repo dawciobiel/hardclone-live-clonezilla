@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-WORK_DIR="/workspace/clonezilla-custom/iso-extract"
-cd "$WORK_DIR/live"
+WORK_DIR="${WORK_DIR:-$PWD}/clonezilla-custom"
+cd "$WORK_DIR/iso-extract/live"
 
 echo "Repackaging filesystem..."
 rm -f filesystem.squashfs
@@ -10,17 +10,16 @@ mksquashfs squashfs-root filesystem.squashfs -comp xz -Xbcj x86
 rm -rf squashfs-root
 
 cd ..
-echo "Updating boot menu..."
-sed -i 's/Clonezilla live/HardClone Live/g' isolinux/isolinux.cfg 2>/dev/null || true
-sed -i 's/Clonezilla/HardClone/g' boot/grub/grub.cfg 2>/dev/null || true
-
-# Detect boot files
-ISOLINUX_BIN=$(find . -name "isolinux.bin" -type f | head -1)
-EFI_IMG=$(find . -name "efi.img" -o -name "*.efi" | head -1)
 
 ISO_NAME="hardclone-live-clonezilla-$(date +%Y%m%d).iso"
 
-echo "Creating new ISO..."
+echo "Updating boot configs..."
+sed -i 's/Clonezilla live/HardClone Live/g' isolinux/isolinux.cfg 2>/dev/null || true
+sed -i 's/Clonezilla/HardClone/g' boot/grub/grub.cfg 2>/dev/null || true
+
+ISOLINUX_BIN=$(find . -name "isolinux.bin" -type f | head -1)
+EFI_IMG=$(find . -name "efi.img" -o -name "*.efi" | head -1)
+
 if [ -n "$ISOLINUX_BIN" ] && [ -n "$EFI_IMG" ]; then
     ISOLINUX_DIR=$(dirname "${ISOLINUX_BIN#./}")
     xorriso -as mkisofs \
@@ -37,11 +36,9 @@ if [ -n "$ISOLINUX_BIN" ] && [ -n "$EFI_IMG" ]; then
         -isohybrid-gpt-basdat \
         -o "../$ISO_NAME" .
 else
-    xorriso -as mkisofs \
-        -r -V "HARDCLONE-LIVE" \
-        -J -l \
-        -o "../$ISO_NAME" .
+    echo "Boot files not found, creating basic ISO..."
+    xorriso -as mkisofs -r -V "HARDCLONE-LIVE" -J -l -o "../$ISO_NAME" .
 fi
 
-mv "../$ISO_NAME" "/workspace/"
-echo "ISO created successfully: /workspace/$ISO_NAME"
+mv "../$ISO_NAME" "$WORK_DIR/"
+echo "ISO created: $WORK_DIR/$ISO_NAME"
