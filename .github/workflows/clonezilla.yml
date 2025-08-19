@@ -39,16 +39,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y debootstrap xorriso isolinux
 
-      # 5. Prepare root filesystem (can be cached)
-      - name: Prepare root filesystem
+      # 5. Extract Clonezilla ISO
+      - name: Extract Clonezilla ISO
         run: |
-          mkdir -p rootfs_cache
-          if [ ! -f rootfs_cache/prepared.txt ]; then
-            ./prepare-rootfs.sh  # Script to create rootfs
-            touch rootfs_cache/prepared.txt
-          else
-            echo "Using cached root filesystem"
-          fi
+          mkdir iso_root
+          bsdtar -C iso_root -xf clonezilla.iso
+
 
       # 6. Build ISO
       - name: Build ISO
