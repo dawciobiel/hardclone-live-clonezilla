@@ -43,27 +43,17 @@ echo "Downloading HardClone applications..."
 cd squashfs-root
 
 echo "Installing additional packages inside squashfs-root..."
-mount --bind /dev dev
-mount --bind /proc proc
-mount --bind /sys sys
-mount --bind /run run || true
+apt-get update && apt-get install -y proot
 
-chroot . /bin/bash -c "
-  set -e
+proot -R . /bin/bash -c "
   apt update
   apt install -y python3-pip python3-venv python3-dialog git xxd fish
-
-  # Make fish default shell
   echo '/usr/bin/fish' >> /etc/shells
-  chsh -s /usr/bin/fish root
+  chsh -s /usr/bin/fish root || true
   if id -u user >/dev/null 2>&1; then
-    chsh -s /usr/bin/fish user
+    chsh -s /usr/bin/fish user || true
   fi
 "
-
-# Exit chroot
-umount dev proc sys run || true
-
 
 # Clone CLI application
 git clone "$HARDCLONE_CLI_REPO" opt/hardclone-cli
