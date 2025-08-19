@@ -37,7 +37,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y debootstrap xorriso isolinux
+          sudo apt-get install -y debootstrap xorriso isolinux libarchive-tools
 
       # 5. Extract Clonezilla ISO
       - name: Extract Clonezilla ISO
