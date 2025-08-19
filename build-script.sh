@@ -42,6 +42,29 @@ unsquashfs filesystem.squashfs
 echo "Downloading HardClone applications..."
 cd squashfs-root
 
+echo "Installing additional packages inside squashfs-root..."
+mount --bind /dev dev
+mount --bind /proc proc
+mount --bind /sys sys
+mount --bind /run run || true
+
+chroot . /bin/bash -c "
+  set -e
+  apt update
+  apt install -y python3-pip python3-venv python3-dialog git xxd fish
+
+  # Make fish default shell
+  echo '/usr/bin/fish' >> /etc/shells
+  chsh -s /usr/bin/fish root
+  if id -u user >/dev/null 2>&1; then
+    chsh -s /usr/bin/fish user
+  fi
+"
+
+# Exit chroot
+umount dev proc sys run || true
+
+
 # Clone CLI application
 git clone "$HARDCLONE_CLI_REPO" opt/hardclone-cli
 
@@ -72,9 +95,7 @@ cat > usr/local/bin/first-boot-setup.sh << 'FBEOF'
 #!/bin/bash
 # First boot setup script
 if [ ! -f /var/log/hardclone-setup-done ]; then
-    echo "HardClone: Installing additional packages..."
-    apt update
-    apt install -y python3-pip python3-venv python3-dialog git xxd fish
+    echo "HardClone: First boot setup up ..."
     
     # Mark as done
     touch /var/log/hardclone-setup-done
@@ -138,18 +159,18 @@ EOF
 # EOF
 
 chmod +x home/user/Desktop/*.desktop
-echo "DEBUG: Desktop shortcuts created"
+# echo "DEBUG: Desktop shortcuts created"
 
 # Add to PATH
-echo 'export PATH="/opt/hardclone-cli:/opt/hardclone-gui:$PATH"' >> etc/bash.bashrc
-echo "DEBUG: Added to PATH"
+# echo 'export PATH="/opt/hardclone-cli:/opt/hardclone-gui:$PATH"' >> etc/bash.bashrc
+echo 'export PATH="/opt/hardclone-cli:$PATH"' >> etc/bash.bashrc
+# echo "DEBUG: Added to PATH"
 
 # Create custom branding
 echo "HardClone Live - Custom Clonezilla Distribution" > etc/motd
-echo "DEBUG: Custom branding added"
 
 cd .. # back to live directory
-echo "DEBUG: Changed back to live directory: $(pwd)"
+# echo "DEBUG: Changed back to live directory: $(pwd)"
 
 # Repackage filesystem
 echo "Repackaging filesystem..."
