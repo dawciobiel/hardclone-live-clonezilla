@@ -12,7 +12,10 @@ echo "Extracting ISO with 7z..."
 7z x "$ISO_NAME" -o"$EXTRACT_DIR"
 
 cd "$EXTRACT_DIR/live"
+echo "DEBUG: checking folder [ $(pwd) ] content:"
+ls -l
+
 echo "Extracting squashfs filesystem..."
-proot -0 unsquashfs -no-xattrs -no-dev -d squashfs-root filesystem.squashfs
+proot -0 unsquashfs -d squashfs-root -no-xattrs -no-dev filesystem.squashfs
 
 echo "Extraction completed: squashfs-root ready"
