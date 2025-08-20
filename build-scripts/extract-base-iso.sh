@@ -15,6 +15,15 @@ echo "Extracting ISO with 7z (skip existing files)..."
 
 echo "Extracting squashfs filesystem..."
 mkdir -p "$SQUASHFS_ROOT"
-unsquashfs -no-xattrs -d "$SQUASHFS_ROOT" "$EXTRACT_DIR/live/filesystem.squashfs"
+
+# Extract ignoring xattrs; allow failure to bypass device creation errors
+unsquashfs -no-xattrs -d "$SQUASHFS_ROOT" "$EXTRACT_DIR/live/filesystem.squashfs" || true
+
+# Remove /dev that couldn't be created and make empty placeholder
+rm -rf "$SQUASHFS_ROOT/dev"
+mkdir "$SQUASHFS_ROOT/dev"
+
+# Optional: remove problematic extended attributes if any remain
+find "$SQUASHFS_ROOT" -type f -exec setfattr -x security.capability {} \; 2>/dev/null || true
 
 echo "Extraction completed: squashfs-root ready"
