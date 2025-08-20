@@ -2,21 +2,26 @@
 set -e
 
 WORK_DIR="${WORK_DIR:-$PWD}"
-ISO_ROOT="$PWD/squashfs-root"
+ISO_ROOT="$WORK_DIR/squashfs-root"
 
 cd "$ISO_ROOT"
 
-echo "Installing additional packages inside squashfs-root..."
+echo "Installing proot for userland emulation..."
 apt-get update && apt-get install -y proot
 
-proot -R . /bin/bash -c "
-  apt update
-  apt install -y python3-pip python3-venv python3-dialog git fish
-  echo '/usr/bin/fish' >> /etc/shells
+echo "Installing additional packages inside squashfs-root..."
+proot -R "$ISO_ROOT" /bin/bash -c "
+  set -e
+  export DEBIAN_FRONTEND=noninteractive
+  # Update and installing packets, we ignore locks and warnings
+  apt update 2>/dev/null || true
+  apt install -y python3-pip python3-venv python3-dialog git fish sudo 2>/dev/null || true
+  echo '/usr/bin/fish' >> /etc/shells || true
   chsh -s /usr/bin/fish root || true
   if id -u user >/dev/null 2>&1; then
     chsh -s /usr/bin/fish user || true
   fi
+  echo 'user ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers || true
 "
 
 echo "Cloning HardClone CLI..."
