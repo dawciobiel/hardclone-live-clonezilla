@@ -1,67 +1,38 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
-WORK_DIR="${WORK_DIR:-$PWD}"
-ISO_ROOT="$WORK_DIR/iso-extract/live/squashfs-root"
+# --- Variables ---
+WORK_DIR="${WORK_DIR:-$PWD/work}"
+ISO_EXTRACT_DIR="$WORK_DIR/iso-root"
+CHROOT_DIR="$WORK_DIR/chroot"
 
-if [ ! -d "$ISO_ROOT" ]; then
-    echo "Error: $ISO_ROOT not found!"
-    exit 1
-fi
+# --- Make dirs ---
+mkdir -p "$CHROOT_DIR"
 
-cd "$WORK_DIR"
+echo "[INFO] Unpacking filesystem.squashfs..."
+# Extract squashfs
+unsquashfs -f -d "$CHROOT_DIR" "$ISO_EXTRACT_DIR/live/filesystem.squashfs"
 
-echo "Preparing offline DEB packages for installation..."
-mkdir -p tmp-debs
-cd tmp-debs
+echo "[INFO] Installing packages inside extracted rootfs with proot..."
+# Copy resolv.conf for network
+cp /etc/resolv.conf "$CHROOT_DIR/etc/resolv.conf"
 
-# List of packages we want inside ISO
-DEB_PACKAGES=("python3-pip" "python3-venv" "python3-dialog" "git" "fish" "sudo")
+# Update apt and install packages inside rootfs using proot
+proot -0 -r "$CHROOT_DIR" /bin/bash -c "
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update
+  apt-get install -y \
+    python3-pip \
+    python3-venv \
+    python3-dialog \
+    git \
+    fish \
+    sudo
+  apt-get clean
+"
 
-# Download .deb packages with dependencies (using apt-get download)
-apt-get update -qq
-for pkg in "${DEB_PACKAGES[@]}"; do
-    echo "Downloading $pkg and dependencies..."
-    apt-get download $(apt-cache depends --recurse --no-recommends \
-                      --no-suggests --no-conflicts --no-breaks \
-                      --no-replaces --no-enhances $pkg | grep "^\w" | sort -u)
-done
+echo "[INFO] Rebuilding filesystem.squashfs..."
+# Repack squashfs with changes
+mksquashfs "$CHROOT_DIR" "$ISO_EXTRACT_DIR/live/filesystem.squashfs" -comp xz -noappend
 
-cd "$WORK_DIR"
-
-echo "Extracting downloaded DEB packages into squashfs-root..."
-for deb in tmp-debs/*.deb; do
-    dpkg-deb -x "$deb" "$ISO_ROOT"
-done
-
-# Configure fish and sudoers
-echo "/usr/bin/fish" >> "$ISO_ROOT/etc/shells" || true
-
-# Root shell
-sed -i 's|^root:[^:]*:|root:/usr/bin/fish:|' "$ISO_ROOT/etc/passwd" || true
-
-# User shell (if exists in /etc/passwd)
-if grep -q "^user:" "$ISO_ROOT/etc/passwd"; then
-    sed -i 's|^\(user:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:\)[^:]*|\1/usr/bin/fish|' "$ISO_ROOT/etc/passwd" || true
-fi
-
-# Passwordless sudo
-echo 'user ALL=(ALL) NOPASSWD:ALL' >> "$ISO_ROOT/etc/sudoers" || true
-
-echo "Cloning HardClone CLI repository..."
-git clone https://github.com/dawciobiel/hardclone-cli.git "$ISO_ROOT/opt/hardclone-cli"
-chmod +x "$ISO_ROOT/opt/hardclone-cli/"* 2>/dev/null || true
-
-# First-boot script
-mkdir -p "$ISO_ROOT/usr/local/bin" "$ISO_ROOT/var/log"
-cat > "$ISO_ROOT/usr/local/bin/first-boot-setup.sh" << 'EOF'
-#!/bin/bash
-if [ ! -f /var/log/hardclone-setup-done ]; then
-    echo "HardClone: First boot setup starting..."
-    touch /var/log/hardclone-setup-done
-    echo "HardClone: Setup completed"
-fi
-EOF
-chmod +x "$ISO_ROOT/usr/local/bin/first-boot-setup.sh"
-
-echo "Customizations completed successfully."
+echo "[INFO] Customization done!"
