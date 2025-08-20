@@ -9,11 +9,13 @@ EXTRACT_DIR="iso-extract"
 
 mkdir -p "$EXTRACT_DIR"
 echo "Extracting ISO with 7z..."
-7z x "$ISO_NAME" -o"$EXTRACT_DIR"
+rm -rf "$EXTRACT_DIR"
+7z x -y "$ISO_NAME" -o"$EXTRACT_DIR"
 
 cd "$EXTRACT_DIR/live"
-echo "DEBUG: checking folder [ $(pwd) ] content:"
-ls -l
+
+# echo "DEBUG: checking folder [ $(pwd) ] content:"
+# ls -l
 
 echo "Extracting squashfs filesystem..."
 # We ignore Xattr and force Exit code 0 despite non-critical errors (e.g. /dev /*)
