@@ -11,26 +11,30 @@ fi
 
 cd "$ISO_ROOT"
 
-echo "Preparing DEB packages for extraction..."
+echo "Preparing offline DEB packages for installation..."
 mkdir -p tmp-debs
 
 # List of packages to install
 DEB_PACKAGES=("python3-pip" "python3-venv" "python3-dialog" "git" "fish" "sudo")
 
-# Download .deb packages
+# Use apt-rdepends to get full dependency tree and download all packages
 for pkg in "${DEB_PACKAGES[@]}"; do
-    echo "Downloading $pkg..."
-    apt download "$pkg" -o=dir::cache=tmp-debs >/dev/null 2>&1 || true
+    echo "Resolving dependencies for $pkg..."
+    apt-get update -qq
+    apt-get install --print-uris --yes --reinstall --download-only $pkg | \
+        grep -Eo "http[s]?://[^\']+" | \
+        xargs -n1 -P4 wget -q -P tmp-debs/
 done
 
-echo "Extracting DEB packages into squashfs-root..."
+echo "Extracting downloaded DEB packages into squashfs-root..."
 for deb in tmp-debs/*.deb; do
     echo "Extracting $deb..."
     dpkg-deb -x "$deb" "$ISO_ROOT"
 done
 
-# Add fish to /etc/shells and set it as default for root and user
+# Add fish to /etc/shells and set as default for root and user
 echo "/usr/bin/fish" >> etc/shells || true
+
 if [ -x usr/bin/chsh ]; then
     chsh -s /usr/bin/fish || true
 fi
