@@ -2,7 +2,7 @@
 set -e
 
 WORK_DIR="${WORK_DIR:-$PWD}"
-ISO_FILE="$WORK_DIR/clonezilla-original.iso"
+ISO_FILE="$WORK_DIR/clonezilla-custom/clonezilla-original.iso"
 EXTRACT_DIR="$WORK_DIR/iso-extract"
 SQUASHFS_ROOT="$EXTRACT_DIR/live/squashfs-root"
 
