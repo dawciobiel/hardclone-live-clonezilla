@@ -9,50 +9,52 @@ if [ ! -d "$ISO_ROOT" ]; then
     exit 1
 fi
 
-cd "$ISO_ROOT"
+cd "$WORK_DIR"
 
 echo "Preparing offline DEB packages for installation..."
 mkdir -p tmp-debs
+cd tmp-debs
 
-# List of packages to install
+# List of packages we want inside ISO
 DEB_PACKAGES=("python3-pip" "python3-venv" "python3-dialog" "git" "fish" "sudo")
 
-# Use apt-rdepends to get full dependency tree and download all packages
+# Download .deb packages with dependencies (using apt-get download)
+apt-get update -qq
 for pkg in "${DEB_PACKAGES[@]}"; do
-    echo "Resolving dependencies for $pkg..."
-    apt-get update -qq
-    apt-get install --print-uris --yes --reinstall --download-only $pkg | \
-        grep -Eo "http[s]?://[^\']+" | \
-        xargs -n1 -P4 wget -q -P tmp-debs/
+    echo "Downloading $pkg and dependencies..."
+    apt-get download $(apt-cache depends --recurse --no-recommends \
+                      --no-suggests --no-conflicts --no-breaks \
+                      --no-replaces --no-enhances $pkg | grep "^\w" | sort -u)
 done
+
+cd "$WORK_DIR"
 
 echo "Extracting downloaded DEB packages into squashfs-root..."
 for deb in tmp-debs/*.deb; do
-    echo "Extracting $deb..."
     dpkg-deb -x "$deb" "$ISO_ROOT"
 done
 
-# Add fish to /etc/shells and set as default for root and user
-echo "/usr/bin/fish" >> etc/shells || true
+# Configure fish and sudoers
+echo "/usr/bin/fish" >> "$ISO_ROOT/etc/shells" || true
 
-if [ -x usr/bin/chsh ]; then
-    chsh -s /usr/bin/fish || true
+# Root shell
+sed -i 's|^root:[^:]*:|root:/usr/bin/fish:|' "$ISO_ROOT/etc/passwd" || true
+
+# User shell (if exists in /etc/passwd)
+if grep -q "^user:" "$ISO_ROOT/etc/passwd"; then
+    sed -i 's|^\(user:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:\)[^:]*|\1/usr/bin/fish|' "$ISO_ROOT/etc/passwd" || true
 fi
 
-if id user >/dev/null 2>&1; then
-    chsh -s /usr/bin/fish user || true
-fi
-
-# Configure sudoers for user without password
-echo 'user ALL=(ALL) NOPASSWD:ALL' >> etc/sudoers || true
+# Passwordless sudo
+echo 'user ALL=(ALL) NOPASSWD:ALL' >> "$ISO_ROOT/etc/sudoers" || true
 
 echo "Cloning HardClone CLI repository..."
-git clone https://github.com/dawciobiel/hardclone-cli.git opt/hardclone-cli
-chmod +x opt/hardclone-cli/* 2>/dev/null || true
+git clone https://github.com/dawciobiel/hardclone-cli.git "$ISO_ROOT/opt/hardclone-cli"
+chmod +x "$ISO_ROOT/opt/hardclone-cli/"* 2>/dev/null || true
 
-# Optional: first-boot script
-mkdir -p usr/local/bin var/log
-cat > usr/local/bin/first-boot-setup.sh << 'EOF'
+# First-boot script
+mkdir -p "$ISO_ROOT/usr/local/bin" "$ISO_ROOT/var/log"
+cat > "$ISO_ROOT/usr/local/bin/first-boot-setup.sh" << 'EOF'
 #!/bin/bash
 if [ ! -f /var/log/hardclone-setup-done ]; then
     echo "HardClone: First boot setup starting..."
@@ -60,6 +62,6 @@ if [ ! -f /var/log/hardclone-setup-done ]; then
     echo "HardClone: Setup completed"
 fi
 EOF
-chmod +x usr/local/bin/first-boot-setup.sh
+chmod +x "$ISO_ROOT/usr/local/bin/first-boot-setup.sh"
 
 echo "Customizations completed successfully."
