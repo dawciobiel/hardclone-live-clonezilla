@@ -14,10 +14,10 @@ cd "$ISO_ROOT"
 echo "Preparing DEB packages for extraction..."
 mkdir -p tmp-debs
 
-# Lista pakietów, które chcemy zainstalować
+# List of packages to install
 DEB_PACKAGES=("python3-pip" "python3-venv" "python3-dialog" "git" "fish" "sudo")
 
-# Pobieramy paczki .deb
+# Download .deb packages
 for pkg in "${DEB_PACKAGES[@]}"; do
     echo "Downloading $pkg..."
     apt download "$pkg" -o=dir::cache=tmp-debs >/dev/null 2>&1 || true
@@ -29,7 +29,7 @@ for deb in tmp-debs/*.deb; do
     dpkg-deb -x "$deb" "$ISO_ROOT"
 done
 
-# Dodajemy fish do /etc/shells i ustawiamy dla root i user
+# Add fish to /etc/shells and set it as default for root and user
 echo "/usr/bin/fish" >> etc/shells || true
 if [ -x usr/bin/chsh ]; then
     chsh -s /usr/bin/fish || true
@@ -39,10 +39,10 @@ if id user >/dev/null 2>&1; then
     chsh -s /usr/bin/fish user || true
 fi
 
-# Konfiguracja sudoers dla user
+# Configure sudoers for user without password
 echo 'user ALL=(ALL) NOPASSWD:ALL' >> etc/sudoers || true
 
-echo "Cloning HardClone CLI..."
+echo "Cloning HardClone CLI repository..."
 git clone https://github.com/dawciobiel/hardclone-cli.git opt/hardclone-cli
 chmod +x opt/hardclone-cli/* 2>/dev/null || true
 
@@ -51,11 +51,11 @@ mkdir -p usr/local/bin var/log
 cat > usr/local/bin/first-boot-setup.sh << 'EOF'
 #!/bin/bash
 if [ ! -f /var/log/hardclone-setup-done ]; then
-    echo "HardClone: First boot setup ..."
+    echo "HardClone: First boot setup starting..."
     touch /var/log/hardclone-setup-done
     echo "HardClone: Setup completed"
 fi
 EOF
 chmod +x usr/local/bin/first-boot-setup.sh
 
-echo "Customizations done."
+echo "Customizations completed successfully."
