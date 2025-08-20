@@ -2,18 +2,22 @@
 set -e
 
 WORK_DIR="${WORK_DIR:-$PWD}"
-ISO_ROOT="$WORK_DIR/squashfs-root"
+ISO_ROOT="$WORK_DIR/iso-extract/live/squashfs-root"
+
+if [ ! -d "$ISO_ROOT" ]; then
+    echo "Error: $ISO_ROOT not found!"
+    exit 1
+fi
 
 cd "$ISO_ROOT"
 
 echo "Installing proot for userland emulation..."
-apt-get update && apt-get install -y proot
+apt-get update && apt-get install -y proot || true
 
 echo "Installing additional packages inside squashfs-root..."
 proot -R "$ISO_ROOT" /bin/bash -c "
   set -e
   export DEBIAN_FRONTEND=noninteractive
-  # Update and installing packets, we ignore locks and warnings
   apt update 2>/dev/null || true
   apt install -y python3-pip python3-venv python3-dialog git fish sudo 2>/dev/null || true
   echo '/usr/bin/fish' >> /etc/shells || true
