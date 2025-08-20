@@ -15,6 +15,6 @@ echo "Extracting ISO with 7z (skip existing files)..."
 
 echo "Extracting squashfs filesystem..."
 mkdir -p "$SQUASHFS_ROOT"
-unsquashfs -d "$SQUASHFS_ROOT" "$EXTRACT_DIR/live/filesystem.squashfs"
+unsquashfs -no-xattrs -d "$SQUASHFS_ROOT" "$EXTRACT_DIR/live/filesystem.squashfs"
 
 echo "Extraction completed: squashfs-root ready"
